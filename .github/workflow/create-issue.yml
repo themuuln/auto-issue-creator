@@ -1,0 +1,58 @@
+name: Scheduled Issue Creator & Closer
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # Runs daily at midnight
+
+jobs:
+  create-issue:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Create Issue
+        id: create-issue
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = `Scheduled Issue: Daily Update`;
+            const body = `This is a scheduled issue created to beautify the contribution graph.`;
+            const owner = github.context.repo.owner;
+            const repo = github.context.repo.repo;
+
+            const { data: issue } = await github.issues.create({
+              owner,
+              repo,
+              title,
+              body,
+            });
+
+            console.log(`Issue created: ${issue.html_url}`);
+
+            // Store the issue number for future reference
+            core.setOutput('issue-number', issue.number);
+
+      - name: Wait for X seconds (adjust as needed)
+        run: sleep 10s  # Wait for 10 seconds before closing the issue
+
+      - name: Close Issue
+        if: steps.create-issue.outputs.issue-number
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = `${{ steps.create-issue.outputs.issue-number }}`;
+            const owner = github.context.repo.owner;
+            const repo = github.context.repo.repo;
+
+            await github.issues.update({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              state: 'closed',
+            });
+
+            console.log(`Issue ${issueNumber} closed.`);
