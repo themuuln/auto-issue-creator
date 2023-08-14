@@ -2,7 +2,7 @@ name: Scheduled Issue Creator & Closer
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # Runs daily at midnight
+    - cron: "*/10 * * * *"  # Runs daily at midnight
 
 jobs:
   create-issue:
